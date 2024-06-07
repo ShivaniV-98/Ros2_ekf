@@ -1,0 +1,1 @@
+geometry_msgs/Point center # center of landmark

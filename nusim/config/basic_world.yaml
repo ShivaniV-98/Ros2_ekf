@@ -1,0 +1,17 @@
+/**:
+  ros__parameters:
+    rate: 200.0 # hz
+    x0: -0.6 # m
+    y0: 0.8 # m
+    theta0: 1.57 # rad
+    obstacles:
+      x: [-0.6, 0.7, 0.5] # m
+      y: [-0.8, -0.7, 0.9] # m
+      r: 0.038 # m
+    input_noise: 0.025 # rad/s
+    slip_fraction: 0.25
+    basic_sensor_variance: 0.01 # m
+    max_range: 1.0 # m
+    lidar:
+      resolution: 0.01 #m
+      noise: 0.01 #m

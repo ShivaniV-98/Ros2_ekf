@@ -1,0 +1,111 @@
+<launch>
+    <!-- ARG START -->
+    <arg name="cmd_src" default="teleop"
+        description="Source for cmd_vel messages. Valid choices are: ['teleop', 'circle', 'none']"
+    />
+
+    <arg name="robot" default="nusim"
+        description="Simulation or other options for running robot nodes. Valid choices are: ['nusim', 'localhost', 'none']"
+    />
+
+    <arg name="use_rviz" default="true"
+        description="Start RVIZ to visualize robot. Valid choices are: ['true', 'false']"
+    />
+    <!-- ARG END -->
+
+
+    <!-- CMD_VEL SOURCE START -->
+    <node pkg="teleop_twist_keyboard" exec="teleop_twist_keyboard" 
+        output="screen" 
+        launch-prefix="xterm -e"
+        if="$(eval '\'$(var cmd_src)\' == \'teleop\'')"
+    />
+
+    <node pkg="nuturtle_control" exec="circle" 
+        if="$(eval '\'$(var cmd_src)\' == \'circle\'')"
+    />
+    <!-- CMD_VEL SOURCE END -->
+
+
+    <!-- SIMULATION START -->
+    <node pkg="rviz2" exec="rviz2"
+        args="-d $(find-pkg-share nuturtle_control)/config/sim.rviz"
+        if="$(eval '\'$(var robot)\' == \'nusim\' and \'$(var use_rviz)\' == \'true\'')"
+    />
+
+    <node pkg="rviz2" exec="rviz2"
+        args="-d $(find-pkg-share nuturtle_control)/config/real.rviz"
+        if="$(eval '\'$(var robot)\' == \'none\' and \'$(var use_rviz)\' == \'true\'')"
+    />
+
+    <include file="$(find-pkg-share nusim)/launch/nusim.launch.xml"
+        if="$(eval '\'$(var robot)\' == \'nusim\'')"
+    >
+        <arg name="use_rviz" value="false"/>
+        <arg name="use_jsp" value="false"/>
+        <arg name="world_yaml_path" 
+            value="$(find-pkg-share nuturtle_control)/config/world.yaml" />
+    </include>
+
+    <include file="$(find-pkg-share nusim)/launch/nusim.launch.xml"
+        if="$(eval '\'$(var robot)\' == \'none\'')"
+    >
+        <arg name="use_rviz" value="false"/>
+        <arg name="use_jsp" value="false"/>
+        <arg name="world_yaml_path" 
+            value="$(find-pkg-share nuturtle_control)/config/world.yaml" />
+        <arg name="draw_only" value="true"/>
+    </include>
+
+    <!-- Publish identity transform between nusim/world and odom -->
+    <node pkg="tf2_ros" exec="static_transform_publisher"
+        args="
+        --frame-id nusim/world
+        --child-frame-id blue/odom
+        "
+        if="$(eval '\'$(var robot)\' != \'localhost\'')"
+    />
+    <!-- SIMULATION END -->
+
+
+    <!-- ROBOT CONTROL START -->
+    <include file="$(find-pkg-share nuturtle_description)/launch/load_one.launch.py"
+        if="$(eval '\'$(var robot)\' == \'nusim\' or \'$(var robot)\' == \'localhost\'')"
+    >
+        <arg name="color" value="blue"/>
+        <arg name="use_rviz" value="false"/>
+        <arg name="use_jsp" value="false" />
+    </include>
+
+    <node pkg="nuturtle_control" exec="odometry"
+        if="$(eval '\'$(var robot)\' == \'nusim\' or \'$(var robot)\' == \'localhost\'')"
+    >
+        <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+        <param name="body_id" value="blue/base_footprint"/>
+        <param name="odom_id" value="blue/odom"/>
+        <param name="wheel_left" value="wheel_left_joint"/>
+        <param name="wheel_right" value="wheel_right_joint"/>
+        <remap from="odom" to="blue/odom"/>
+        <remap from="path" to="blue/path"/>
+    </node>
+
+    <node pkg="nuturtle_control" exec="turtle_control"
+        if="$(eval '\'$(var robot)\' == \'nusim\' or \'$(var robot)\' == \'localhost\'')"
+    >
+        <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+    </node>
+
+    <node pkg="numsr_turtlebot" exec="numsr_turtlebot"
+        if="$(eval '\'$(var robot)\' == \'localhost\'')"
+    />
+
+    <node pkg="hls_lfcd_lds_driver" exec="hlds_laser_publisher"
+        name="hlds_laser_publisher" output="screen"
+        if="$(eval '\'$(var robot)\' == \'localhost\'')"
+    >
+        <param name="port" value="/dev/ttyUSB0"/>
+        <param name="frame_id" value="green/base_scan"/>
+    </node>
+    <!-- ROBOT CONTROL END -->
+
+</launch>

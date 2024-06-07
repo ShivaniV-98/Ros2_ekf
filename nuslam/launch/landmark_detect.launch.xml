@@ -1,0 +1,55 @@
+<launch>
+    <!-- ARG START -->
+    <arg name="cmd_src" default="teleop"
+        description="Source for cmd_vel messages. Valid choices are: ['teleop', 'circle', 'none']"
+    />
+
+    <arg name="robot" default="nusim"
+        description="Simulation or other options for running robot nodes. Valid choices are: ['nusim', 'localhost', 'none']"
+    />
+
+    <arg name="use_rviz" default="true"
+        description="Start RVIZ to visualize robot. Valid choices are: ['true', 'false']"
+    />
+    <!-- ARG END -->
+
+    <node pkg="rviz2" exec="rviz2"
+        args="-d $(find-pkg-share nuslam)/config/sim.rviz"
+        if="$(eval '\'$(var robot)\' == \'nusim\' and \'$(var use_rviz)\' == \'true\'')"
+    />
+
+    <node pkg="rviz2" exec="rviz2"
+        args="-d $(find-pkg-share nuslam)/config/real.rviz"
+        if="$(eval '\'$(var robot)\' == \'none\' and \'$(var use_rviz)\' == \'true\'')"
+    />
+
+    <include file="$(find-pkg-share nuturtle_control)/launch/start_robot.launch.xml">
+        <arg name="cmd_src" value="$(var cmd_src)"/>
+        <arg name="robot" value="$(var robot)"/>
+        <arg name="use_rviz" value="false"/>
+    </include>
+
+    <!-- Publish identity transform between nusim/world and map -->
+    <node pkg="tf2_ros" exec="static_transform_publisher"
+        args="
+        --frame-id nusim/world
+        --child-frame-id map
+        "
+    />
+
+    <node pkg="nuslam" exec="landmarks" 
+        if="$(eval '\'$(var robot)\' == \'nusim\'')"
+    >
+        <param from="$(find-pkg-share nuslam)/config/slam_params_sim.yaml"/>
+        <param name="clusters.visualize" value="true"/>
+        <param name="circles.visualize" value="true"/>
+    </node>
+
+    <node pkg="nuslam" exec="landmarks" 
+        if="$(eval '\'$(var robot)\' == \'localhost\'')"
+    >
+        <param from="$(find-pkg-share nuslam)/config/slam_params_real.yaml"/>
+        <param name="clusters.visualize" value="true"/>
+        <param name="circles.visualize" value="true"/>
+    </node>
+</launch>

@@ -1,0 +1,33 @@
+<launch>
+    <!-- ARG START -->
+    <arg name="cmd_src" default="teleop"
+        description="Source for cmd_vel messages. Valid choices are: ['teleop', 'circle', 'none']"
+    />
+
+    <arg name="robot" default="nusim"
+        description="Simulation or other options for running robot nodes. Valid choices are: ['nusim', 'localhost', 'none']"
+    />
+
+    <arg name="use_rviz" default="true"
+        description="Start RVIZ to visualize robot. Valid choices are: ['true', 'false']"
+    />
+
+    <include file="$(find-pkg-share nuslam)/launch/slam.launch.xml">
+        <arg name="cmd_src" value="$(var cmd_src)"/>
+        <arg name="robot" value="$(var robot)"/>
+        <arg name="use_rviz" value="$(var use_rviz)"/>
+        <arg name="use_fake_sensor" value="false" />
+    </include>
+
+    <node pkg="nuslam" exec="landmarks" 
+        if="$(eval '\'$(var robot)\' == \'nusim\'')"
+    >
+        <param from="$(find-pkg-share nuslam)/config/slam_params_sim.yaml"/>
+    </node>
+
+    <node pkg="nuslam" exec="landmarks" 
+        if="$(eval '\'$(var robot)\' == \'localhost\'')"
+    >
+        <param from="$(find-pkg-share nuslam)/config/slam_params_real.yaml"/>
+    </node>
+</launch>

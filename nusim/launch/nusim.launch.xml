@@ -1,0 +1,48 @@
+<launch>
+    <arg name="use_rviz" default="true"
+        description="Start RVIZ to visualize robot. Valid choices are: ['true', 'false']"
+    />
+
+    <arg name="world_yaml_path" default="$(find-pkg-share nusim)/config/basic_world.yaml"
+        description="Path to yaml file for world parameters. Set to empty string to omit."
+    />
+
+    <arg name="draw_only" default="false"
+        description="Draw obstacles only, do not simulate. Valid choices are: ['true', 'false']"
+    />
+
+    <arg name="use_jsp" default="true"
+        description="Selects whether or not to launch the joint state publisher. Valid choices are: ['true', 'false']"
+    />
+
+    <node pkg="rviz2" exec="rviz2"
+        args="-d $(find-pkg-share nusim)/config/nusim.rviz"
+        if="$(var use_rviz)"
+    />
+
+    <!-- Ground Truth -->
+    <node pkg="nusim" exec="nusim" name="nusim"
+        if="$(eval '\'$(var draw_only)\' == \'false\'')"
+    >
+        <param name="draw_only" value="$(var draw_only)"/>
+        <param from="$(var world_yaml_path)"/>
+        <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+    </node>
+
+    <node pkg="nusim" exec="nusim" name="nuwall"
+        if="$(eval '\'$(var draw_only)\' == \'true\'')"
+    >
+        <param name="draw_only" value="$(var draw_only)"/>
+        <param from="$(var world_yaml_path)"/>
+        <param from="$(find-pkg-share nuturtle_description)/config/diff_params.yaml"/>
+    </node>
+
+    <include file="$(find-pkg-share nuturtle_description)/launch/load_one.launch.py"
+        if="$(eval '\'$(var draw_only)\' == \'false\'')"
+    >
+        <arg name="color" value="red"/>
+        <arg name="use_rviz" value="false"/>
+        <arg name="use_jsp" value="$(var use_jsp)"/>
+    </include>
+
+</launch>

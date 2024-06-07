@@ -1,0 +1,9 @@
+<launch>
+    <include file="$(find-pkg-share nuslam)/launch/unknown_data_assoc.launch.xml">
+        <arg name="cmd_src" value="none"/>
+        <arg name="robot" value="localhost"/>
+        <arg name="use_rviz" value="false"/>
+        <arg name="use_fake_sensor" value="false" />
+    </include>
+    <node pkg="nuslam" exec="real_lidar_visualize" />
+</launch>
